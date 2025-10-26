@@ -49,7 +49,7 @@ const Header = () => {
   };
 
   return (
-    <header className="bg-[#FFFFFF4D]">
+    <header className="bg-header-background sticky top-0 z-20">
       <Box className="container mx-auto px-4 sm:px-6 lg:px-8">
         <Box className="flex justify-between items-center py-4">
           <Box className="flex items-center space-x-3">

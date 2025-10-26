@@ -15,9 +15,9 @@ export default function Home() {
     <div className="w-full! h-full! max-lg:overflow-y-auto">
       <Header />
 
-      <SinLine className="absolute lg:bottom-[10%] max-lg:top-[10%] left-0 w-full z-0" />
       <Box className="lg:flex max-lg:flex-col justify-between items-center w-full h-[calc(100%-105px)]">
-        <Box className="flex flex-col lg:justify-center max-lg:justify-start lg:items-start max-lg:items-center w-full lg:h-full lg:my-auto lg:pl-24 pl-0 lg:gap-10 max-lg:gap-6">
+        <Box className="flex flex-col lg:justify-center max-lg:justify-start lg:items-start max-lg:items-center w-full lg:h-full lg:my-auto lg:pl-24 pl-0 lg:gap-10 max-lg:gap-6 max-lg:relative">
+          <SinLine className="absolute lg:bottom-[10%] max-lg:top-[10%] left-0 w-full z-0 pointer-events-none" />
           <TrustBanner />
           <Box className="flex flex-col lg:gap-8 max-lg:gap-2 max-lg:justify-center max-lg:items-start">
             <h1 className="lg:text-6xl max-lg:text-2xl font-black text-charcoal leading-tight z-10">
