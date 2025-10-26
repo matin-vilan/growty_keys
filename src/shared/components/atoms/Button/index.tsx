@@ -38,7 +38,7 @@ const Button = (
   return (
     <button
       className={twMerge(
-        "z-10",
+        "z-10 cursor-pointer",
         variantClasses[variant],
         sizeClasses[size],
         className
