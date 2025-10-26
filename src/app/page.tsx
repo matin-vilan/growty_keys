@@ -72,6 +72,7 @@ export default function Home() {
               autoRotate={true}
               enableZoom={true}
               enablePan={false}
+              imageSource="/images/iphonePicCover.png"
             />
           </Box>
         </Box>

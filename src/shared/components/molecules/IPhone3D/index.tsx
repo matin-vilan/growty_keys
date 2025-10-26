@@ -13,7 +13,19 @@ interface IPhone3DProps {
   autoRotate?: boolean;
   enableZoom?: boolean;
   enablePan?: boolean;
+  imageSource?: string; // Path to the image to display on the screen
 }
+
+// Helper function to configure texture
+const configureTexture = (texture: THREE.Texture) => {
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.flipY = false;
+  texture.wrapS = THREE.ClampToEdgeWrapping;
+  texture.wrapT = THREE.ClampToEdgeWrapping;
+  texture.repeat.set(1.95, 0.92);
+  texture.offset.set(0.025, 0.04);
+  texture.needsUpdate = true;
+};
 
 // Simple iPhone Model Component (fallback)
 const SimpleIPhoneModel = ({
@@ -21,8 +33,29 @@ const SimpleIPhoneModel = ({
   rotation = [0, 0, 0],
   scale = 1,
   autoRotate = true,
+  imageSource,
 }: Omit<IPhone3DProps, "className" | "enableZoom" | "enablePan">) => {
   const meshRef = useRef<THREE.Group>(null);
+  const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
+
+  // Load texture
+  React.useEffect(() => {
+    if (imageSource) {
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        imageSource,
+        (loadedTexture) => {
+          // Configure texture for better display and fit
+          configureTexture(loadedTexture);
+          setTexture(loadedTexture);
+        },
+        undefined,
+        (error) => {
+          console.error("Failed to load texture:", error);
+        }
+      );
+    }
+  }, [imageSource]);
 
   // Auto rotation animation
   useFrame((state) => {
@@ -32,6 +65,22 @@ const SimpleIPhoneModel = ({
     }
   });
 
+  const screenMaterial = React.useMemo(() => {
+    if (!texture) {
+      return new THREE.MeshStandardMaterial({ color: 0x000000 });
+    }
+
+    const mat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: texture,
+      emissiveMap: null,
+      emissiveIntensity: 0,
+      metalness: 0,
+      roughness: 0,
+    });
+    return mat;
+  }, [texture]);
+
   return (
     <group ref={meshRef} position={position} rotation={rotation} scale={scale}>
       {/* iPhone Body */}
@@ -40,10 +89,9 @@ const SimpleIPhoneModel = ({
         <meshStandardMaterial color="#C0C0C0" metalness={0.8} roughness={0.2} />
       </mesh>
 
-      {/* Screen */}
-      <mesh position={[0, 0, 0.06]}>
+      {/* Screen with Image */}
+      <mesh position={[0, 0, 0.06]} material={screenMaterial}>
         <boxGeometry args={[0.7, 1.4, 0.02]} />
-        <meshStandardMaterial color="#000000" />
       </mesh>
 
       {/* Dynamic Island */}
@@ -62,10 +110,62 @@ const SimpleIPhoneModel = ({
 };
 
 // GLTF Model Component - Load without textures
-const GLTFModel = () => {
+const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
   const [gltf, setGltf] = React.useState<THREE.Group | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
+  const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
+  const gltfRef = React.useRef<THREE.Group | null>(null);
+
+  // Load texture for screen
+  React.useEffect(() => {
+    if (imageSource) {
+      const loader = new THREE.TextureLoader();
+      loader.load(
+        imageSource,
+        (loadedTexture) => {
+          // Configure texture for better display and fit
+          configureTexture(loadedTexture);
+          setTexture(loadedTexture);
+        },
+        undefined,
+        (error) => {
+          console.error("Failed to load texture:", error);
+        }
+      );
+    }
+  }, [imageSource]);
+
+  // Apply texture to model when it's loaded
+  React.useEffect(() => {
+    if (gltfRef.current && texture) {
+      gltfRef.current.traverse((child) => {
+        if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
+          const mesh = child as THREE.Mesh;
+          const materials = Array.isArray(mesh.material)
+            ? mesh.material
+            : [mesh.material];
+
+          materials.forEach((material) => {
+            const mat = material as THREE.MeshStandardMaterial;
+            // Apply texture to black/dark materials (screen)
+            if (
+              mat.color &&
+              (mat.color.getHex() === 0x000000 || mat.color.getHex() < 0x333333)
+            ) {
+              mat.map = texture;
+              mat.color = new THREE.Color(0xffffff);
+              mat.emissiveMap = null;
+              mat.emissiveIntensity = 0;
+              mat.metalness = 0;
+              mat.roughness = 0;
+              mat.needsUpdate = true;
+            }
+          });
+        }
+      });
+    }
+  }, [texture]);
 
   React.useEffect(() => {
     const loader = new GLTFLoader();
@@ -77,40 +177,69 @@ const GLTFModel = () => {
         gltf.scene.traverse((child) => {
           if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
             const mesh = child as THREE.Mesh;
-            if (Array.isArray(mesh.material)) {
-              mesh.material.forEach((material: THREE.Material) => {
-                const mat = material as THREE.MeshStandardMaterial;
-                // Remove all texture maps
-                mat.map = null;
-                mat.normalMap = null;
-                mat.emissiveMap = null;
-                mat.aoMap = null;
-                mat.metalnessMap = null;
-                mat.roughnessMap = null;
-                // Set basic metallic material
+            const materials = Array.isArray(mesh.material)
+              ? mesh.material
+              : [mesh.material];
+
+            materials.forEach((material) => {
+              const mat = material as THREE.MeshStandardMaterial;
+
+              // Remove texture maps except we'll add our image to dark materials
+              mat.normalMap = null;
+              mat.emissiveMap = null;
+              mat.aoMap = null;
+              mat.metalnessMap = null;
+              mat.roughnessMap = null;
+
+              // Set metallic material for body
+              if (!mat.color || mat.color.getHex() > 0x333333) {
                 mat.color = new THREE.Color(0x333333);
                 mat.metalness = 0.8;
                 mat.roughness = 0.2;
-              });
-            } else {
-              const material = mesh.material as THREE.MeshStandardMaterial;
-              // Remove all texture maps
-              material.map = null;
-              material.normalMap = null;
-              material.emissiveMap = null;
-              material.aoMap = null;
-              material.metalnessMap = null;
-              material.roughnessMap = null;
-              // Set basic metallic material
-              material.color = new THREE.Color(0x333333);
-              material.metalness = 0.8;
-              material.roughness = 0.2;
-            }
+              }
+            });
           }
         });
 
+        gltfRef.current = gltf.scene;
         setGltf(gltf.scene);
         setLoading(false);
+
+        // Apply texture if it's already loaded
+        if (texture) {
+          setTimeout(() => {
+            if (gltfRef.current) {
+              gltfRef.current.traverse((child) => {
+                if (
+                  (child as THREE.Mesh).isMesh &&
+                  (child as THREE.Mesh).material
+                ) {
+                  const mesh = child as THREE.Mesh;
+                  const materials = Array.isArray(mesh.material)
+                    ? mesh.material
+                    : [mesh.material];
+
+                  materials.forEach((material) => {
+                    const mat = material as THREE.MeshStandardMaterial;
+                    if (
+                      mat.color &&
+                      (mat.color.getHex() === 0x000000 ||
+                        mat.color.getHex() < 0x333333)
+                    ) {
+                      mat.map = texture;
+                      mat.color = new THREE.Color(0xffffff);
+                      mat.emissiveMap = null;
+                      mat.emissiveIntensity = 0;
+                      mat.metalness = 0;
+                      mat.roughness = 0;
+                      mat.needsUpdate = true;
+                    }
+                  });
+                }
+              });
+            }
+          }, 0);
+        }
       },
       undefined,
       (error) => {
@@ -119,14 +248,14 @@ const GLTFModel = () => {
         setLoading(false);
       }
     );
-  }, []);
+  }, [texture]);
 
   if (loading) {
-    return <SimpleIPhoneModel />;
+    return <SimpleIPhoneModel imageSource={imageSource} />;
   }
 
   if (error || !gltf) {
-    return <SimpleIPhoneModel />;
+    return <SimpleIPhoneModel imageSource={imageSource} />;
   }
 
   return <primitive object={gltf} scale={0.22} />;
@@ -138,6 +267,7 @@ const IPhoneModel = ({
   rotation = [0, 0, 0],
   scale = 1,
   autoRotate = true,
+  imageSource,
 }: Omit<IPhone3DProps, "className" | "enableZoom" | "enablePan">) => {
   const meshRef = useRef<THREE.Group>(null);
 
@@ -163,8 +293,8 @@ const IPhoneModel = ({
 
   return (
     <group ref={meshRef} position={position} rotation={rotation} scale={scale}>
-      <Suspense fallback={<SimpleIPhoneModel />}>
-        <GLTFModel />
+      <Suspense fallback={<SimpleIPhoneModel imageSource={imageSource} />}>
+        <GLTFModel imageSource={imageSource} />
       </Suspense>
     </group>
   );
@@ -179,6 +309,7 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
   autoRotate = true,
   enableZoom = true,
   enablePan = true,
+  imageSource,
 }) => {
   return (
     <div className={`w-full h-full ${className}`}>
@@ -216,6 +347,7 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
           rotation={rotation}
           scale={scale}
           autoRotate={autoRotate}
+          imageSource={imageSource}
         />
 
         {/* Contact Shadows */}
@@ -229,9 +361,9 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
 
         {/* Controls */}
         <OrbitControls
-          enableZoom={enableZoom}
-          enablePan={enablePan}
-          enableRotate={true}
+          enableZoom={false}
+          enablePan={false}
+          enableRotate={false}
           autoRotate={false}
           autoRotateSpeed={0}
           minDistance={3}
