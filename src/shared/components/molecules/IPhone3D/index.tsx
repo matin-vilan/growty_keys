@@ -13,10 +13,9 @@ interface IPhone3DProps {
   autoRotate?: boolean;
   enableZoom?: boolean;
   enablePan?: boolean;
-  imageSource?: string; // Path to the image to display on the screen
+  imageSource?: string;
 }
 
-// Helper function to configure texture
 const configureTexture = (texture: THREE.Texture) => {
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.flipY = false;
@@ -27,7 +26,6 @@ const configureTexture = (texture: THREE.Texture) => {
   texture.needsUpdate = true;
 };
 
-// Simple iPhone Model Component (fallback)
 const SimpleIPhoneModel = ({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
@@ -38,14 +36,12 @@ const SimpleIPhoneModel = ({
   const meshRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
 
-  // Load texture
   React.useEffect(() => {
     if (imageSource) {
       const loader = new THREE.TextureLoader();
       loader.load(
         imageSource,
         (loadedTexture) => {
-          // Configure texture for better display and fit
           configureTexture(loadedTexture);
           setTexture(loadedTexture);
         },
@@ -57,7 +53,6 @@ const SimpleIPhoneModel = ({
     }
   }, [imageSource]);
 
-  // Auto rotation animation
   useFrame((state) => {
     if (meshRef.current && autoRotate) {
       meshRef.current.rotation.y =
@@ -109,7 +104,6 @@ const SimpleIPhoneModel = ({
   );
 };
 
-// GLTF Model Component - Load without textures
 const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
   const [gltf, setGltf] = React.useState<THREE.Group | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -117,14 +111,12 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
   const [texture, setTexture] = React.useState<THREE.Texture | null>(null);
   const gltfRef = React.useRef<THREE.Group | null>(null);
 
-  // Load texture for screen
   React.useEffect(() => {
     if (imageSource) {
       const loader = new THREE.TextureLoader();
       loader.load(
         imageSource,
         (loadedTexture) => {
-          // Configure texture for better display and fit
           configureTexture(loadedTexture);
           setTexture(loadedTexture);
         },
@@ -136,7 +128,6 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
     }
   }, [imageSource]);
 
-  // Apply texture to model when it's loaded
   React.useEffect(() => {
     if (gltfRef.current && texture) {
       gltfRef.current.traverse((child) => {
@@ -148,7 +139,6 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
 
           materials.forEach((material) => {
             const mat = material as THREE.MeshStandardMaterial;
-            // Apply texture to black/dark materials (screen)
             if (
               mat.color &&
               (mat.color.getHex() === 0x000000 || mat.color.getHex() < 0x333333)
@@ -173,7 +163,6 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
     loader.load(
       "/iphone16/scene.gltf",
       (gltf) => {
-        // Remove all textures and set basic materials
         gltf.scene.traverse((child) => {
           if ((child as THREE.Mesh).isMesh && (child as THREE.Mesh).material) {
             const mesh = child as THREE.Mesh;
@@ -184,14 +173,12 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
             materials.forEach((material) => {
               const mat = material as THREE.MeshStandardMaterial;
 
-              // Remove texture maps except we'll add our image to dark materials
               mat.normalMap = null;
               mat.emissiveMap = null;
               mat.aoMap = null;
               mat.metalnessMap = null;
               mat.roughnessMap = null;
 
-              // Set metallic material for body
               if (!mat.color || mat.color.getHex() > 0x333333) {
                 mat.color = new THREE.Color(0x333333);
                 mat.metalness = 0.8;
@@ -205,7 +192,6 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
         setGltf(gltf.scene);
         setLoading(false);
 
-        // Apply texture if it's already loaded
         if (texture) {
           setTimeout(() => {
             if (gltfRef.current) {
@@ -261,7 +247,6 @@ const GLTFModel = ({ imageSource }: { imageSource?: string }) => {
   return <primitive object={gltf} scale={0.22} />;
 };
 
-// iPhone Model Component
 const IPhoneModel = ({
   position = [0, 0, 0],
   rotation = [0, 0, 0],
@@ -271,21 +256,16 @@ const IPhoneModel = ({
 }: Omit<IPhone3DProps, "className" | "enableZoom" | "enablePan">) => {
   const meshRef = useRef<THREE.Group>(null);
 
-  // Partial rotation animation: 0° → 45° → 0° (no full spin)
   useFrame((state) => {
     if (meshRef.current && autoRotate) {
       const time = state.clock.elapsedTime;
-      const duration = 4; // 4 seconds for complete cycle
+      const duration = 4;
 
-      // Create a smooth oscillation between 0° and -45° (left side)
-      // Using Math.sin to create smooth back-and-forth motion
-      const angle = (Math.sin((time * Math.PI) / duration) + 1) * 0.5; // 0 to 1
-      const rotationAngle = -angle * (Math.PI / 4); // Convert to radians (-45° = -π/4)
+      const angle = (Math.sin((time * Math.PI) / duration) + 1) * 0.5;
+      const rotationAngle = -angle * (Math.PI / 4);
 
-      // Apply rotation on Y-axis (left-right rotation)
       meshRef.current.rotation.y = rotationAngle;
 
-      // Keep other rotations at 0
       meshRef.current.rotation.x = 0;
       meshRef.current.rotation.z = 0;
     }
@@ -300,7 +280,6 @@ const IPhoneModel = ({
   );
 };
 
-// Main iPhone3D Component
 const IPhone3D: React.FC<IPhone3DProps> = ({
   className = "",
   position = [0, 0, 0],
@@ -327,7 +306,6 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
           powerPreference: "high-performance",
         }}
       >
-        {/* Lighting Setup */}
         <ambientLight intensity={0.4} />
         <directionalLight
           position={[10, 10, 5]}
@@ -338,10 +316,8 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
         />
         <pointLight position={[-10, -10, -10]} intensity={0.3} />
 
-        {/* Environment */}
         <Environment preset="studio" />
 
-        {/* iPhone Model */}
         <IPhoneModel
           position={position}
           rotation={rotation}
@@ -350,7 +326,6 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
           imageSource={imageSource}
         />
 
-        {/* Contact Shadows */}
         <ContactShadows
           position={[0, -2, 0]}
           opacity={0.4}
@@ -359,7 +334,6 @@ const IPhone3D: React.FC<IPhone3DProps> = ({
           far={4.5}
         />
 
-        {/* Controls */}
         <OrbitControls
           enableZoom={false}
           enablePan={false}

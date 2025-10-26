@@ -49,7 +49,6 @@ interface CircularsProps {
 }
 
 const Circulars: React.FC<CircularsProps> = ({ className = "", circles }) => {
-  // Default circles configuration
   const defaultCircles: CircleConfig[] = [
     { size: "720px", opacity: 0.1, delay: "0s", hasPulseOpacity: true },
     { size: "590px", opacity: 0.1, delay: "0s", hasPulseOpacity: true },
@@ -58,16 +57,20 @@ const Circulars: React.FC<CircularsProps> = ({ className = "", circles }) => {
     { size: "300px", opacity: 0.3, delay: "1s" },
     {
       size: "185px",
-      opacity: 0.5,
+      opacity: 0.2,
       delay: "1.25s",
       className: "bg-secondary",
     },
   ];
 
   const circleConfigs = circles || defaultCircles;
+
   return (
     <div
-      className={`absolute bottom-[10%] left-[10%] flex justify-center items-center inset-0 pointer-events-none ${className}`}
+      className={twMerge(
+        `absolute bottom-[10%] left-[10%] flex justify-center items-center inset-0 pointer-events-none`,
+        className
+      )}
     >
       {circleConfigs.map((config, index) => (
         <Circle
