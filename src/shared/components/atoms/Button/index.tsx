@@ -1,9 +1,11 @@
+import Icon, { IconName } from "@/shared/icon";
 import React, { HTMLAttributes, PropsWithChildren } from "react";
 import { twMerge } from "tailwind-merge";
 
 export type ButtonProps = {
-  variant?: "primary" | "secondary" | "outline";
+  variant?: "primary" | "secondary" | "outline" | "discover";
   size?: "small" | "medium" | "large";
+  rightIcon?: IconName;
 };
 
 const Button = (
@@ -14,6 +16,7 @@ const Button = (
     variant = "primary",
     size = "medium",
     className,
+    rightIcon,
     ...rest
   } = props;
 
@@ -22,6 +25,8 @@ const Button = (
     secondary: "bg-secondary text-charcoal",
     outline:
       "bg-primary text-charcoal rounded-xl border-2 border-secondary hover:bg-muted transition-colors",
+    discover:
+      "bg-white text-secondary rounded-full px-8 py-4 flex items-center justify-between gap-4 hover:bg-yellow-50 transition-colors font-black text-xl",
   };
 
   const sizeClasses = {
@@ -32,10 +37,16 @@ const Button = (
 
   return (
     <button
-      className={twMerge(variantClasses[variant], sizeClasses[size], className)}
+      className={twMerge(
+        "z-10",
+        variantClasses[variant],
+        sizeClasses[size],
+        className
+      )}
       {...rest}
     >
       {children}
+      {rightIcon && <Icon src={rightIcon} />}
     </button>
   );
 };

@@ -3,8 +3,10 @@ import React from "react";
 import icons from "./icons.json";
 import parse, { domToReact, attributesToProps } from "html-react-parser";
 
+export type IconName = keyof typeof icons;
+
 export type IconProps = {
-  src: keyof typeof icons;
+  src: IconName;
 };
 export type CombinedProps = React.SVGProps<SVGSVGElement> & IconProps;
 const Icon = ({ src, ...props }: Omit<CombinedProps, "children">) => {

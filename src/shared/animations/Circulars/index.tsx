@@ -28,7 +28,7 @@ const Circle = ({
         width: size,
         height: size,
         animation: hasPulseOpacity
-          ? "pulseOpacityWithPulseScale 4s ease-in-out infinite"
+          ? "pulseOpacityWithPulseScale 2.5s ease-in-out infinite"
           : undefined,
       }}
     />
@@ -67,7 +67,7 @@ const Circulars: React.FC<CircularsProps> = ({ className = "", circles }) => {
   const circleConfigs = circles || defaultCircles;
   return (
     <div
-      className={`absolute bottom-0 left-0 flex justify-center items-center inset-0 overflow-hidden pointer-events-none ${className}`}
+      className={`absolute bottom-[10%] left-[10%] flex justify-center items-center inset-0 pointer-events-none ${className}`}
     >
       {circleConfigs.map((config, index) => (
         <Circle
