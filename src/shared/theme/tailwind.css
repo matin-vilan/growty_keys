@@ -30,7 +30,15 @@
   );
 
   /* Animations */
-  --animate-pulse-slow: pulseScale 4s ease-in-out infinite;
+  --animate-pulse-slow: pulseScale 2.5s ease-in-out infinite;
+}
+
+.rotate-x-0 {
+  transform: rotateX(0deg);
+}
+
+.-rotate-x-90 {
+  transform: rotateX(-90deg);
 }
 
 /* Custom animations */
